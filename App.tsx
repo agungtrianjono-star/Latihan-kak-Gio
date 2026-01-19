@@ -1,18 +1,18 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, RotateCcw, Settings, Check, X } from 'lucide-react';
-import { audioService } from './services/audioService';
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Pause, RotateCcw, Settings } from 'lucide-react';
+import { audioService } from './services/audioService.ts';
 
-const DEFAULT_TIME = 15 * 60; // 15 minutes in seconds
+const DEFAULT_TIME = 15 * 60; // 15 minutes
 
 const App: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(DEFAULT_TIME);
+  const [initialTime, setInitialTime] = useState(DEFAULT_TIME);
   const [isActive, setIsActive] = useState(false);
   const [isSettingCustom, setIsSettingCustom] = useState(false);
   const [customMinutes, setCustomMinutes] = useState('15');
   const [customSeconds, setCustomSeconds] = useState('00');
   
-  // Use ReturnType<typeof setInterval> to avoid reliance on the NodeJS namespace in a browser environment
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const formatTime = (seconds: number) => {
@@ -28,7 +28,7 @@ const App: React.FC = () => {
 
   const handleReset = () => {
     setIsActive(false);
-    setTimeLeft(DEFAULT_TIME);
+    setTimeLeft(initialTime);
   };
 
   const handleSetCustomTime = () => {
@@ -36,6 +36,7 @@ const App: React.FC = () => {
     const secs = parseInt(customSeconds) || 0;
     const totalSeconds = (mins * 60) + secs;
     if (totalSeconds > 0) {
+      setInitialTime(totalSeconds);
       setTimeLeft(totalSeconds);
       setIsSettingCustom(false);
       setIsActive(false);
@@ -51,7 +52,7 @@ const App: React.FC = () => {
             setIsActive(false);
             return 0;
           }
-          // Sound effects for final seconds
+          // Beep Test style warnings for final 5 seconds
           if (prev <= 6) {
             audioService.playTick();
           }
@@ -68,112 +69,106 @@ const App: React.FC = () => {
   }, [isActive, timeLeft]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-700 via-indigo-800 to-purple-900 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
       
-      {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-400 opacity-20 blur-[120px] rounded-full"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500 opacity-20 blur-[120px] rounded-full"></div>
-
-      {/* Header */}
-      <div className="z-10 text-center mb-8">
-        <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter drop-shadow-lg">
+      {/* Title Section */}
+      <div className="z-10 text-center mb-12">
+        <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter drop-shadow-2xl">
           Latihan Kak Gio
         </h1>
-        <p className="text-blue-200 mt-2 font-medium tracking-widest opacity-80">
-          PUSH YOUR LIMITS
-        </p>
+        <div className="h-1 w-24 bg-blue-500 mx-auto mt-4 rounded-full"></div>
       </div>
 
-      {/* Main Timer Display */}
+      {/* Main Timer Ring */}
       <div className="relative z-10 flex flex-col items-center">
-        {/* Pulsing ring around timer */}
         {isActive && (
-          <div className="absolute inset-0 pulsing-effect rounded-full bg-white opacity-10 blur-md"></div>
+          <div className="absolute inset-0 pulsing-effect rounded-full bg-blue-400/20 blur-xl"></div>
         )}
         
-        <div className={`glass rounded-full w-72 h-72 md:w-96 md:h-96 flex items-center justify-center transition-transform duration-500 ${isActive ? 'scale-105' : 'scale-100'}`}>
+        <div className={`glass rounded-full w-80 h-80 md:w-[450px] md:h-[450px] flex flex-col items-center justify-center transition-all duration-700 ${isActive ? 'scale-105 shadow-[0_0_50px_rgba(59,130,246,0.3)]' : 'scale-100'}`}>
           <div className="text-center">
-            <span className="text-7xl md:text-9xl font-black tabular-nums drop-shadow-2xl">
+            <span className="text-8xl md:text-[140px] font-black tabular-nums tracking-tighter block leading-none">
               {formatTime(timeLeft)}
             </span>
+            <p className="text-blue-300 font-bold tracking-[0.3em] uppercase mt-4 text-xs md:text-sm">
+              Time Remaining
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="mt-12 z-10 flex gap-6 items-center">
+      {/* Controls Container */}
+      <div className="mt-16 z-10 flex gap-8 items-center">
         <button 
           onClick={handleReset}
-          className="p-4 rounded-full bg-white/10 hover:bg-white/20 transition-colors border border-white/20"
-          title="Reset"
+          className="w-16 h-16 rounded-2xl bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center border border-white/10 active:scale-90"
         >
-          <RotateCcw size={28} />
+          <RotateCcw size={24} />
         </button>
 
         <button 
           onClick={handleStartStop}
-          className="w-24 h-24 rounded-full bg-white text-indigo-900 flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-110 active:scale-95 transition-all"
+          className="w-24 h-24 rounded-3xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-[0_20px_40px_-10px_rgba(37,99,235,0.5)] hover:scale-110 active:scale-95 transition-all"
         >
           {isActive ? <Pause size={48} fill="currentColor" /> : <Play size={48} className="ml-2" fill="currentColor" />}
         </button>
 
         <button 
           onClick={() => setIsSettingCustom(true)}
-          className="p-4 rounded-full bg-white/10 hover:bg-white/20 transition-colors border border-white/20"
-          title="Custom Settings"
+          className="w-16 h-16 rounded-2xl bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center border border-white/10 active:scale-90"
         >
-          <Settings size={28} />
+          <Settings size={24} />
         </button>
       </div>
 
-      {/* Progress Bar (Visual indicator) */}
-      <div className="mt-12 w-full max-w-md bg-white/10 h-2 rounded-full overflow-hidden z-10 border border-white/5">
+      {/* Progress Bar */}
+      <div className="mt-16 w-full max-w-sm h-1.5 bg-white/5 rounded-full overflow-hidden z-10">
         <div 
-          className="h-full bg-white transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(255,255,255,0.5)]"
-          style={{ width: `${(timeLeft / DEFAULT_TIME) * 100}%` }}
+          className="h-full bg-blue-500 transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(59,130,246,0.8)]"
+          style={{ width: `${(timeLeft / initialTime) * 100}%` }}
         ></div>
       </div>
 
       {/* Custom Time Modal */}
       {isSettingCustom && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
-          <div className="bg-slate-900 border border-white/20 p-8 rounded-3xl w-full max-w-sm shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6 text-center">Atur Waktu Latihan</h2>
-            <div className="flex gap-4 items-center justify-center mb-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xl p-6">
+          <div className="glass p-10 rounded-[2rem] w-full max-w-md border-white/10 shadow-2xl">
+            <h2 className="text-3xl font-black mb-8 text-center uppercase tracking-tight">Atur Waktu</h2>
+            <div className="flex gap-6 items-center justify-center mb-10">
               <div className="flex flex-col items-center">
                 <input 
                   type="number" 
                   value={customMinutes}
                   onChange={(e) => setCustomMinutes(e.target.value)}
-                  className="bg-white/5 border border-white/10 w-20 h-20 text-4xl font-black text-center rounded-2xl focus:outline-none focus:border-blue-400"
-                  max="99"
+                  className="bg-white/10 border border-white/20 w-24 h-24 text-5xl font-black text-center rounded-3xl focus:outline-none focus:ring-4 focus:ring-blue-500/50"
+                  max="999"
                   min="0"
                 />
-                <span className="text-xs mt-2 opacity-50 uppercase font-bold">Menit</span>
+                <span className="text-[10px] mt-3 opacity-50 uppercase font-black tracking-widest">Minutes</span>
               </div>
-              <span className="text-4xl font-black">:</span>
+              <span className="text-5xl font-black text-blue-500">:</span>
               <div className="flex flex-col items-center">
                 <input 
                   type="number" 
                   value={customSeconds}
                   onChange={(e) => setCustomSeconds(e.target.value)}
-                  className="bg-white/5 border border-white/10 w-20 h-20 text-4xl font-black text-center rounded-2xl focus:outline-none focus:border-blue-400"
+                  className="bg-white/10 border border-white/20 w-24 h-24 text-5xl font-black text-center rounded-3xl focus:outline-none focus:ring-4 focus:ring-blue-500/50"
                   max="59"
                   min="0"
                 />
-                <span className="text-xs mt-2 opacity-50 uppercase font-bold">Detik</span>
+                <span className="text-[10px] mt-3 opacity-50 uppercase font-black tracking-widest">Seconds</span>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button 
                 onClick={() => setIsSettingCustom(false)}
-                className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 font-bold transition-colors"
+                className="flex-1 py-5 rounded-2xl bg-white/5 hover:bg-white/10 font-black uppercase tracking-widest transition-colors text-xs"
               >
                 Batal
               </button>
               <button 
                 onClick={handleSetCustomTime}
-                className="flex-1 py-4 rounded-2xl bg-white text-indigo-900 font-bold hover:bg-blue-50 transition-colors shadow-lg"
+                className="flex-1 py-5 rounded-2xl bg-blue-600 text-white font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl text-xs"
               >
                 Terapkan
               </button>
@@ -182,34 +177,15 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Follow-up / Survey Section */}
-      <div className="mt-16 z-10 w-full max-w-3xl glass p-8 rounded-3xl border-white/10 mb-10">
-        <h3 className="text-xl font-bold mb-4 text-blue-200">Bagaimana saya bisa membantu Anda lebih lanjut?</h3>
-        <p className="text-sm text-white/70 mb-6">
-          Timer ini dirancang untuk latihan intensitas tinggi seperti <b>Berlari, Lari interval, Pull Up, Push Up, atau Sit up</b>.
-          Beri tahu saya jika Anda ingin menyesuaikan fitur berikut:
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-4">
-            <h4 className="text-sm font-black uppercase text-blue-300">Pertanyaan Lanjutan:</h4>
-            <ul className="text-sm space-y-2 list-disc list-inside opacity-90">
-              <li>Durasi spesifik yang Anda butuhkan untuk setiap set?</li>
-              <li>Preferensi gaya visual (lebih gelap, futuristik, atau cerah)?</li>
-              <li>Apakah Anda ingin hitung mundur berkelanjutan (Interval)?</li>
-              <li>Fitur tambahan (peringatan suara khusus, efek visual flash)?</li>
-              <li>Jenis latihan spesifik yang Anda lakukan hari ini?</li>
-            </ul>
-          </div>
-          <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-            <h4 className="text-sm font-black uppercase text-purple-300 mb-2">Contoh Penggunaan:</h4>
-            <div className="flex flex-wrap gap-2">
-              {['Berlari', 'Lari Interval', 'Pull Up', 'Push Up', 'Sit up'].map((tag) => (
-                <span key={tag} className="text-[10px] px-2 py-1 bg-white/10 rounded-full border border-white/10 font-bold uppercase tracking-wider">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
+      {/* Usage Tips Overlay */}
+      <div className="mt-auto pt-10 z-10 w-full max-w-lg text-center opacity-40 hover:opacity-100 transition-opacity">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-blue-300">Cocok Untuk</p>
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[11px] font-bold">
+          <span>BERLARI</span>
+          <span>LARI INTERVAL</span>
+          <span>PULL UP</span>
+          <span>PUSH UP</span>
+          <span>SIT UP</span>
         </div>
       </div>
     </div>

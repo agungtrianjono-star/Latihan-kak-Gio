@@ -12,20 +12,57 @@
       font-family: 'Inter', sans-serif;
       margin: 0;
       padding: 0;
-      overflow-x: hidden;
+      overflow: hidden;
+      background: #0f172a;
     }
     .pulsing-effect {
       animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
     @keyframes pulse-ring {
-      0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.05); opacity: 0.4; }
-      100% { transform: scale(0.95); opacity: 0.8; }
+      0% { transform: scale(0.95); opacity: 0.6; }
+      50% { transform: scale(1.1); opacity: 0.2; }
+      100% { transform: scale(0.95); opacity: 0.6; }
     }
     .glass {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    .bg-mesh {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      filter: blur(80px);
+      opacity: 0.6;
+    }
+    .mesh-ball-1 {
+      position: absolute;
+      top: 20%;
+      left: 10%;
+      width: 40vw;
+      height: 40vw;
+      background: #4f46e5;
+      border-radius: 50%;
+      animation: drift 20s infinite alternate;
+    }
+    .mesh-ball-2 {
+      position: absolute;
+      bottom: 10%;
+      right: 10%;
+      width: 50vw;
+      height: 50vw;
+      background: #9333ea;
+      border-radius: 50%;
+      animation: drift 25s infinite alternate-reverse;
+    }
+    @keyframes drift {
+      from { transform: translate(0, 0); }
+      to { transform: translate(10%, 15%); }
     }
   </style>
 <script type="importmap">
@@ -39,7 +76,12 @@
 }
 </script>
 </head>
-<body class="bg-slate-900">
+<body class="bg-slate-900 text-white">
+  <div class="bg-mesh">
+    <div class="mesh-ball-1"></div>
+    <div class="mesh-ball-2"></div>
+  </div>
   <div id="root"></div>
+  <script type="module" src="index.tsx"></script>
 </body>
 </html>

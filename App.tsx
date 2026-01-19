@@ -1,27 +1,27 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Settings } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, Check, X } from 'lucide-react';
 import { audioService } from './services/audioService.ts';
 
-const DEFAULT_TIME = 15 * 60; // 15 minutes
+const DEFAULT_TIME = 15 * 60; // 15 Menit
 
 const App: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(DEFAULT_TIME);
   const [initialTime, setInitialTime] = useState(DEFAULT_TIME);
   const [isActive, setIsActive] = useState(false);
-  const [isSettingCustom, setIsSettingCustom] = useState(false);
-  const [customMinutes, setCustomMinutes] = useState('15');
-  const [customSeconds, setCustomSeconds] = useState('00');
+  const [showSettings, setShowSettings] = useState(false);
+  const [inputMins, setInputMins] = useState('15');
+  const [inputSecs, setInputSecs] = useState('00');
   
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const handleStartStop = () => {
+  const handleToggle = () => {
     if (!isActive) audioService.init();
     setIsActive(!isActive);
   };
@@ -31,14 +31,12 @@ const App: React.FC = () => {
     setTimeLeft(initialTime);
   };
 
-  const handleSetCustomTime = () => {
-    const mins = parseInt(customMinutes) || 0;
-    const secs = parseInt(customSeconds) || 0;
-    const totalSeconds = (mins * 60) + secs;
-    if (totalSeconds > 0) {
-      setInitialTime(totalSeconds);
-      setTimeLeft(totalSeconds);
-      setIsSettingCustom(false);
+  const handleApplySettings = () => {
+    const total = (parseInt(inputMins) || 0) * 60 + (parseInt(inputSecs) || 0);
+    if (total > 0) {
+      setInitialTime(total);
+      setTimeLeft(total);
+      setShowSettings(false);
       setIsActive(false);
     }
   };
@@ -52,7 +50,7 @@ const App: React.FC = () => {
             setIsActive(false);
             return 0;
           }
-          // Beep Test style warnings for final 5 seconds
+          // Suara detak di 5 detik terakhir
           if (prev <= 6) {
             audioService.playTick();
           }
@@ -62,132 +60,125 @@ const App: React.FC = () => {
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }
-
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isActive, timeLeft]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden">
       
-      {/* Title Section */}
-      <div className="z-10 text-center mb-12">
-        <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter drop-shadow-2xl">
+      {/* Background Orbs */}
+      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-blue-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+      {/* Title */}
+      <header className="z-10 text-center mb-12">
+        <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-glow bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">
           Latihan Kak Gio
         </h1>
-        <div className="h-1 w-24 bg-blue-500 mx-auto mt-4 rounded-full"></div>
-      </div>
+        <p className="text-blue-400 text-xs md:text-sm font-bold tracking-[0.5em] uppercase mt-2 opacity-60">
+          Professional Timer
+        </p>
+      </header>
 
-      {/* Main Timer Ring */}
-      <div className="relative z-10 flex flex-col items-center">
-        {isActive && (
-          <div className="absolute inset-0 pulsing-effect rounded-full bg-blue-400/20 blur-xl"></div>
-        )}
-        
-        <div className={`glass rounded-full w-80 h-80 md:w-[450px] md:h-[450px] flex flex-col items-center justify-center transition-all duration-700 ${isActive ? 'scale-105 shadow-[0_0_50px_rgba(59,130,246,0.3)]' : 'scale-100'}`}>
+      {/* Main Timer Display */}
+      <div className="relative z-10">
+        <div className={`glass rounded-full w-72 h-72 md:w-[450px] md:h-[450px] flex flex-col items-center justify-center transition-all duration-500 relative ${isActive ? 'pulsing scale-105 border-blue-500/30' : 'scale-100 border-white/10'}`}>
           <div className="text-center">
-            <span className="text-8xl md:text-[140px] font-black tabular-nums tracking-tighter block leading-none">
+            <span className="text-7xl md:text-[140px] font-black tabular-nums tracking-tighter leading-none block drop-shadow-2xl">
               {formatTime(timeLeft)}
             </span>
-            <p className="text-blue-300 font-bold tracking-[0.3em] uppercase mt-4 text-xs md:text-sm">
-              Time Remaining
-            </p>
           </div>
         </div>
-      </div>
-
-      {/* Controls Container */}
-      <div className="mt-16 z-10 flex gap-8 items-center">
-        <button 
-          onClick={handleReset}
-          className="w-16 h-16 rounded-2xl bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center border border-white/10 active:scale-90"
-        >
-          <RotateCcw size={24} />
-        </button>
-
-        <button 
-          onClick={handleStartStop}
-          className="w-24 h-24 rounded-3xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-[0_20px_40px_-10px_rgba(37,99,235,0.5)] hover:scale-110 active:scale-95 transition-all"
-        >
-          {isActive ? <Pause size={48} fill="currentColor" /> : <Play size={48} className="ml-2" fill="currentColor" />}
-        </button>
-
-        <button 
-          onClick={() => setIsSettingCustom(true)}
-          className="w-16 h-16 rounded-2xl bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center border border-white/10 active:scale-90"
-        >
-          <Settings size={24} />
-        </button>
       </div>
 
       {/* Progress Bar */}
-      <div className="mt-16 w-full max-w-sm h-1.5 bg-white/5 rounded-full overflow-hidden z-10">
+      <div className="w-full max-w-sm bg-white/5 h-1 rounded-full mt-12 overflow-hidden z-10 border border-white/5">
         <div 
-          className="h-full bg-blue-500 transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(59,130,246,0.8)]"
+          className="h-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-1000 ease-linear"
           style={{ width: `${(timeLeft / initialTime) * 100}%` }}
-        ></div>
+        />
       </div>
 
-      {/* Custom Time Modal */}
-      {isSettingCustom && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xl p-6">
-          <div className="glass p-10 rounded-[2rem] w-full max-w-md border-white/10 shadow-2xl">
-            <h2 className="text-3xl font-black mb-8 text-center uppercase tracking-tight">Atur Waktu</h2>
-            <div className="flex gap-6 items-center justify-center mb-10">
-              <div className="flex flex-col items-center">
+      {/* Controls */}
+      <div className="mt-12 z-10 flex items-center gap-8">
+        <button 
+          onClick={handleReset}
+          className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all active:scale-90"
+          title="Reset"
+        >
+          <RotateCcw size={28} className="text-slate-400" />
+        </button>
+
+        <button 
+          onClick={handleToggle}
+          className={`w-24 h-24 rounded-3xl flex items-center justify-center transition-all shadow-2xl active:scale-95 ${isActive ? 'bg-white text-slate-900 shadow-white/10' : 'bg-blue-600 text-white shadow-blue-600/30 hover:bg-blue-500'}`}
+        >
+          {isActive ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" className="ml-2" />}
+        </button>
+
+        <button 
+          onClick={() => setShowSettings(true)}
+          className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all active:scale-90"
+          title="Pengaturan"
+        >
+          <Settings size={28} className="text-slate-400" />
+        </button>
+      </div>
+
+      {/* Quick Info Tags */}
+      <footer className="mt-auto pt-10 z-10 text-center opacity-30 hover:opacity-100 transition-opacity">
+        <div className="flex flex-wrap justify-center gap-4 text-[10px] font-black tracking-widest uppercase">
+          <span className="px-3 py-1 border border-white/20 rounded-full">Berlari</span>
+          <span className="px-3 py-1 border border-white/20 rounded-full">Interval</span>
+          <span className="px-3 py-1 border border-white/20 rounded-full">Push Up</span>
+          <span className="px-3 py-1 border border-white/20 rounded-full">Beep Test</span>
+        </div>
+      </footer>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-6">
+          <div className="glass p-8 rounded-[2.5rem] w-full max-w-sm border-white/20">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-black uppercase tracking-tight">Set Waktu</h2>
+              <button onClick={() => setShowSettings(false)} className="opacity-50 hover:opacity-100">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-center gap-4 mb-10">
+              <div className="text-center">
                 <input 
                   type="number" 
-                  value={customMinutes}
-                  onChange={(e) => setCustomMinutes(e.target.value)}
-                  className="bg-white/10 border border-white/20 w-24 h-24 text-5xl font-black text-center rounded-3xl focus:outline-none focus:ring-4 focus:ring-blue-500/50"
-                  max="999"
-                  min="0"
+                  value={inputMins}
+                  onChange={(e) => setInputMins(e.target.value)}
+                  className="bg-white/10 w-20 h-20 text-4xl font-black text-center rounded-2xl focus:ring-2 ring-blue-500 outline-none"
                 />
-                <span className="text-[10px] mt-3 opacity-50 uppercase font-black tracking-widest">Minutes</span>
+                <span className="block text-[10px] uppercase font-bold mt-2 opacity-40">Menit</span>
               </div>
-              <span className="text-5xl font-black text-blue-500">:</span>
-              <div className="flex flex-col items-center">
+              <span className="text-4xl font-black text-blue-500">:</span>
+              <div className="text-center">
                 <input 
                   type="number" 
-                  value={customSeconds}
-                  onChange={(e) => setCustomSeconds(e.target.value)}
-                  className="bg-white/10 border border-white/20 w-24 h-24 text-5xl font-black text-center rounded-3xl focus:outline-none focus:ring-4 focus:ring-blue-500/50"
-                  max="59"
-                  min="0"
+                  value={inputSecs}
+                  onChange={(e) => setInputSecs(e.target.value)}
+                  className="bg-white/10 w-20 h-20 text-4xl font-black text-center rounded-2xl focus:ring-2 ring-blue-500 outline-none"
                 />
-                <span className="text-[10px] mt-3 opacity-50 uppercase font-black tracking-widest">Seconds</span>
+                <span className="block text-[10px] uppercase font-bold mt-2 opacity-40">Detik</span>
               </div>
             </div>
-            <div className="flex gap-4">
-              <button 
-                onClick={() => setIsSettingCustom(false)}
-                className="flex-1 py-5 rounded-2xl bg-white/5 hover:bg-white/10 font-black uppercase tracking-widest transition-colors text-xs"
-              >
-                Batal
-              </button>
-              <button 
-                onClick={handleSetCustomTime}
-                className="flex-1 py-5 rounded-2xl bg-blue-600 text-white font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl text-xs"
-              >
-                Terapkan
-              </button>
-            </div>
+
+            <button 
+              onClick={handleApplySettings}
+              className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-colors"
+            >
+              Simpan & Terapkan
+            </button>
           </div>
         </div>
       )}
-
-      {/* Usage Tips Overlay */}
-      <div className="mt-auto pt-10 z-10 w-full max-w-lg text-center opacity-40 hover:opacity-100 transition-opacity">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-blue-300">Cocok Untuk</p>
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[11px] font-bold">
-          <span>BERLARI</span>
-          <span>LARI INTERVAL</span>
-          <span>PULL UP</span>
-          <span>PUSH UP</span>
-          <span>SIT UP</span>
-        </div>
-      </div>
     </div>
   );
 };
